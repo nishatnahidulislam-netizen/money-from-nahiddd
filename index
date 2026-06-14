@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Money From Nahid - Unlimited Ads</title>
+    <script src="//libtl.com/sdk.js" data-zone="11145359" data-sdk="show_11145359"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--tg-theme-bg-color, #0f0f0f);
+            color: var(--tg-theme-text-color, #ffffff);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            color: white;
+        }
+        .logo {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        .card {
+            background: var(--tg-theme-secondary-bg-color, #1a1a1a);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .balance {
+            text-align: center;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+        .balance-amount {
+            font-size: 42px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .earnings-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .button {
+            background: var(--tg-theme-button-color, #2481cc);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s;
+            margin-bottom: 10px;
+        }
+        .button:active {
+            transform: scale(0.98);
+        }
+        .button-ads {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            font-size: 18px;
+            padding: 18px;
+        }
+        .counter-card {
+            background: #2a2a2a;
+            text-align: center;
+        }
+        .ad-counter {
+            font-size: 48px;
+            font-weight: bold;
+            color: #f7931e;
+        }
+        .floating-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #f7931e;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 12px 20px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            z-index: 100;
+        }
+        @media (max-width: 480px) {
+            body { padding: 12px; }
+            .balance-amount { font-size: 32px; }
+        }
+    </style>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">💰</div>
+            <h1>Money From Nahid</h1>
+            <div style="font-size: 12px;">🎬 Unlimited Ads | সীমাহীন আয়</div>
+        </div>
+        
+        <div class="card balance">
+            <div>আপনার মোট ব্যালেন্স</div>
+            <div class="balance-amount" id="balance">$0.00</div>
+        </div>
+
+        <div class="earnings-card">
+            <div>আজকের আয়</div>
+            <div class="earnings-value" id="todayEarnings">$0.00</div>
+            <div style="font-size: 12px;">আজ বিজ্ঞাপন দেখেছেন: <span id="todayAds">0</span> বার</div>
+        </div>
+
+        <div class="card counter-card">
+            <div>🎬 এই সেশনে দেখেছেন</div>
+            <div class="ad-counter" id="sessionAds">0</div>
+            <div>বার বিজ্ঞাপন</div>
+        </div>
+
+        <button class="button button-ads" onclick="watchUnlimitedAd()">🎬 এখনই বিজ্ঞাপন দেখুন (+$0.05)</button>
+        
+        <button class="button" onclick="withdrawEarnings()">💸 টাকা উত্তোলন করুন</button>
+    </div>
+
+    <button class="floating-btn" onclick="watchUnlimitedAd()">🎬 +$0.05</button>
+
+    <script>
+        let tg = window.Telegram.WebApp;
+        let user = tg.initDataUnsafe?.user;
+        
+        let userData = {
+            userId: user?.id || 'user_' + Math.random().toString(36).substr(2, 9),
+            balance: 0,
+            todayEarnings: 0,
+            todayAdsWatched: 0,
+            sessionAdsWatched: 0
+        };
+
+        function loadUserData() {
+            const saved = localStorage.getItem(`monetag_${userData.userId}`);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                userData = { ...userData, ...parsed };
+            }
+            const today = new Date().toDateString();
+            if (userData.lastDate !== today) {
+                userData.todayEarnings = 0;
+                userData.todayAdsWatched = 0;
+                userData.lastDate = today;
+            }
+            updateUI();
+        }
+
+        function saveUserData() {
+            localStorage.setItem(`monetag_${userData.userId}`, JSON.stringify(userData));
+        }
+
+        function updateUI() {
+            document.getElementById('balance').innerHTML = `$${userData.balance.toFixed(2)}`;
+            document.getElementById('todayEarnings').innerHTML = `$${userData.todayEarnings.toFixed(2)}`;
+            document.getElementById('todayAds').innerHTML = userData.todayAdsWatched;
+            document.getElementById('sessionAds').innerHTML = userData.sessionAdsWatched;
+        }
+
+        function watchUnlimitedAd() {
+            document.getElementById('loader')?.classList?.add('active');
+            
+            setTimeout(() => {
+                const earning = 0.05;
+                userData.balance += earning;
+                userData.todayEarnings += earning;
+                userData.todayAdsWatched += 1;
+                userData.sessionAdsWatched += 1;
+                saveUserData();
+                updateUI();
+                
+                if (typeof show_11145359 !== 'undefined') {
+                    show_11145359();
+                }
+                
+                tg.showAlert(`🎉 +$${earning.toFixed(2)} আয় হয়েছে! মোট ${userData.sessionAdsWatched} বার দেখেছেন।`);
+                
+                document.getElementById('loader')?.classList?.remove('active');
+            }, 3000);
+        }
+
+        function withdrawEarnings() {
+            if (userData.balance < 0.50) {
+                tg.showAlert('ন্যূনতম উত্তোলন $0.50');
+                return;
+            }
+            tg.showPopup({
+                title: 'টাকা উত্তোলন',
+                message: `$${userData.balance.toFixed(2)} উত্তোলন করুন?`,
+                buttons: [
+                    {id: 'cancel', type: 'cancel', text: 'বাতিল'},
+                    {id: 'ok', type: 'default', text: 'উত্তোলন'}
+                ]
+            }, (buttonId) => {
+                if (buttonId === 'ok') {
+                    tg.showAlert(`$${userData.balance.toFixed(2)} উত্তোলনের অনুরোধ জমা হয়েছে!`);
+                    userData.balance = 0;
+                    saveUserData();
+                    updateUI();
+                }
+            });
+        }
+
+        function initTelegramApp() {
+            tg.ready();
+            tg.expand();
+            tg.MainButton.setText('🎬 বিজ্ঞাপন দেখুন');
+            tg.MainButton.show();
+            tg.MainButton.onClick(() => watchUnlimitedAd());
+            loadUserData();
+        }
+
+        initTelegramApp();
+    </script>
+</body>
+</html>
